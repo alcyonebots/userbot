@@ -16,7 +16,7 @@ API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
 
 # MongoDB setup for storing sessions
 client = pymongo.MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")
-db = client["Reaper_sessions"]
+db = client["reaper"]
 sessions_collection = db["sessions"]
 
 # Initialize logging
@@ -239,6 +239,10 @@ def help_command(update: Update, context: CallbackContext):
     """
     update.message.reply_text(help_text)
 
+# Ping command
+def ping(update: Update, context: CallbackContext):
+    update.message.reply_text("Pong!")
+
 # Main bot setup
 def main():
     BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'
@@ -248,14 +252,16 @@ def main():
     # Command handlers
     dp.add_handler(CommandHandler("clone", clone))
     dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("ping", ping))
 
     # Start the Telegram bot
     updater.start_polling()
 
-    # Start userbot sessions
+    # Load saved sessions and start userbots
     loop = asyncio.get_event_loop()
     loop.run_until_complete(load_sessions())
 
+    # Run idle to keep the bot running
     updater.idle()
 
 if __name__ == '__main__':
