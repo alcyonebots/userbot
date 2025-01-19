@@ -202,8 +202,10 @@ def clone(update: Update, context):
 
         update.message.reply_text("Session cloned successfully! Starting your userbot...")
 
-        # Run the userbot asynchronously for this user
-        asyncio.create_task(start_userbot(string_session))
+        # Run the userbot in a new event loop
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(start_userbot(string_session))
     except Exception as e:
         logger.error(f"Error in /clone command: {e}")
         update.message.reply_text(f"An error occurred: {e}")
