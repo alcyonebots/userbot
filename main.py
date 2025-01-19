@@ -15,6 +15,7 @@ rraid_flag = False
 raid_flag = False
 spam_flag = False
 target_user_id = None  # Target user ID for rraid
+target_message = None  # Target message for echo and raid
 
 # Load quotes from an external file
 def load_quotes():
@@ -45,24 +46,25 @@ async def ping(event):
 
 @userbot.on(events.NewMessage(pattern=r'^\.stop$', outgoing=True))
 async def stop(event):
-    global echo_flag, rraid_flag, raid_flag, spam_flag, target_user_id
+    global echo_flag, rraid_flag, raid_flag, spam_flag, target_user_id, target_message
     echo_flag = False
     rraid_flag = False
     raid_flag = False
     spam_flag = False
     target_user_id = None
+    target_message = None
     await event.respond("All ongoing actions stopped.")
     await event.delete()
 
 @userbot.on(events.NewMessage(pattern=r'^\.echo$', outgoing=True))
 async def echo(event):
-    global echo_flag
+    global echo_flag, target_message
     if event.is_reply:
         echo_flag = True
-        original_message = await event.get_reply_message()
+        target_message = await event.get_reply_message()
         await event.respond("Echo mode activated.")
         while echo_flag:
-            await event.respond(original_message.text)
+            await event.respond(target_message.text)
             await asyncio.sleep(2)
     else:
         await event.respond("Reply to a message to start echo mode.")
@@ -75,7 +77,7 @@ async def rraid(event):
         rraid_flag = True
         target_message = await event.get_reply_message()
         target_user_id = target_message.sender_id
-        await event.respond("Reply Raid activated.")
+        await event.respond(f"Reply Raid activated. Now replying to messages from the target user.")
         await event.delete()
     else:
         await event.respond("Reply to a user to start the reply raid.")
@@ -86,22 +88,23 @@ async def monitor(event):
     global rraid_flag, target_user_id
     if rraid_flag and event.sender_id == target_user_id:
         random_quote = random.choice(quotes)
-        await event.respond(random_quote)
+        # Send quote while replying to the target user
+        await event.respond(random_quote, reply_to=event.message.id)
 
 @userbot.on(events.NewMessage(pattern=r'^\.raid (\d+)$', outgoing=True))
 async def raid(event):
-    global raid_flag
+    global raid_flag, target_message
     raid_flag = True
     if event.is_reply:
         count = int(event.pattern_match.group(1))
         target_message = await event.get_reply_message()
         target_user = target_message.sender_id
-        await event.respond(f"Raid started!")
+        await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>target user</a>!")
         for _ in range(count):
             if not raid_flag:
                 break
             random_quote = random.choice(quotes)
-            await event.respond(f"@{target_user} {random_quote}")
+            await event.respond(f"<a href='tg://user?id={target_user}'>@{target_user}</a> {random_quote}", parse_mode='html')
             await asyncio.sleep(1)
     else:
         await event.respond("Reply to a user to raid them.")
