@@ -7,7 +7,7 @@ from telethon.sessions import StringSession
 from telethon.tl.functions.contacts import ResolveUsernameRequest
 from telethon.tl.functions.users import GetFullUserRequest
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Application, CommandHandler
 import logging
 import pymongo
 
@@ -17,7 +17,7 @@ API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
 
 # MongoDB setup for storing sessions
 client = pymongo.MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")
-db = clien["Reaper_sessions"]
+db = client["Reaper_sessions"]
 sessions_collection = db["sessions"]
 
 # Initialize logging
@@ -131,7 +131,7 @@ async def start_userbot(string_session):
                         break
                     random_quote = random.choice(quotes)
                     await event.respond(f"<a href='tg://user?id={target_user_id}'>{full_name}</a> {random_quote}", parse_mode='html')
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0)
             except Exception as e:
                 await event.respond(f"Error: Could not resolve username @{username}.")
         elif event.is_reply:
@@ -147,7 +147,7 @@ async def start_userbot(string_session):
                         break
                     random_quote = random.choice(quotes)
                     await event.respond(f"<a href='tg://user?id={target_user.id}'>{full_name}</a> {random_quote}", parse_mode='html')
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0)
             except Exception as e:
                 await event.respond("Error: Could not retrieve the target user.")
         else:
@@ -164,7 +164,7 @@ async def start_userbot(string_session):
             if not spam_flag:
                 break
             await event.respond(text)
-            await asyncio.sleep(1)
+            await asyncio.sleep(0)
         await event.delete()
 
     @userbot.on(events.NewMessage(pattern=r'^\.help$', outgoing=True))
@@ -202,9 +202,9 @@ async def load_sessions():
     except Exception as e:
         logger.error(f"Error loading sessions: {e}")
 
-def clone(update: Update, context):
+# Clone command for the bot
+async def clone(update: Update, context):
     try:
-        # Parse the session string from the command
         if not context.args or len(context.args) == 0:
             update.message.reply_text("Please provide a valid Telethon string session.")
             return
@@ -222,14 +222,14 @@ def clone(update: Update, context):
         update.message.reply_text("Session cloned successfully! Starting your userbot...")
 
         # Start the userbot for this session
-        asyncio.create_task(start_userbot(string_session))
+        await start_userbot(string_session)
 
     except Exception as e:
         logger.error(f"Error in /clone command: {e}")
         update.message.reply_text(f"An error occurred: {e}")
 
 # Help command
-def help_command(update: Update, context):
+async def help_command(update: Update, context):
     help_text = """Available commands:
     /ping - Check latency
     /raid <number of messages> - Start raid with random quotes
@@ -240,30 +240,20 @@ def help_command(update: Update, context):
     """
     update.message.reply_text(help_text)
 
-# Ping command
-def ping(update: Update, context):
-    update.message.reply_text("Pong!")
-
 # Main bot setup
-def main():
+async def main():
     BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+    application = Application.builder().token(BOT_TOKEN).build()
 
     # Command handlers
-    dp.add_handler(CommandHandler("clone", clone))
-    dp.add_handler(CommandHandler("help", help_command))
-    dp.add_handler(CommandHandler("ping", ping))
-
-    # Start a new asyncio event loop for both the Telegram bot and the userbots
-    loop = asyncio.get_event_loop()
+    application.add_handler(CommandHandler("clone", clone))
+    application.add_handler(CommandHandler("help", help_command))
 
     # Load saved sessions and start userbots
-    loop.run_until_complete(load_sessions())
+    await load_sessions()
 
     # Start the bot
-    updater.start_polling()
-    updater.idle()
+    await application.start_polling()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
