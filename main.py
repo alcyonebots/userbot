@@ -13,9 +13,9 @@ db = client_mongo["user_sessions"]
 sessions_collection = db["sessions"]
 
 # Telethon setup (replace these with your own details)
-API_ID = 'your_api_id'
-API_HASH = 'your_api_hash'
-BOT_TOKEN = 'your_bot_token'
+API_ID = '27783899'
+API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
+BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'
 
 # Global flags and variables
 echo_flag = False
