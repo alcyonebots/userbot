@@ -40,7 +40,6 @@ userbot = TelegramClient(StringSession(string_session), API_ID, API_HASH)
 @userbot.on(events.NewMessage(pattern=r'^\.ping$', outgoing=True))
 async def ping(event):
     start_time = time.time()
-    await event.respond("Pong!")
     end_time = time.time()
     latency = (end_time - start_time) * 1000  # Convert to ms
     await event.respond(f"Pong! `{latency:.2f} ms`")
@@ -60,17 +59,26 @@ async def stop(event):
 
 @userbot.on(events.NewMessage(pattern=r'^\.echo$', outgoing=True))
 async def echo(event):
-    global echo_flag, target_message
+    global echo_flag, target_user_id
     if event.is_reply:
-        echo_flag = True
         target_message = await event.get_reply_message()
-        await event.respond("Echo mode activated.")
-        while echo_flag:
-            await event.respond(target_message.text)
-            await asyncio.sleep(2)
+        target_user_id = target_message.sender_id  # Save the target user's ID
+        echo_flag = True
     else:
         await event.respond("Reply to a message to start echo mode.")
     await event.delete()
+
+@userbot.on(events.NewMessage())
+async def monitor_echo(event):
+    global echo_flag, target_user_id
+    if echo_flag and event.sender_id == target_user_id:
+        try:
+            # Get the text of the target user's message
+            message_text = event.text
+            # Reply to the target user's message
+            await event.respond(message_text, reply_to=event.id)
+        except Exception as e:
+            print(f"Error during echo: {e}")
 
 @userbot.on(events.NewMessage(pattern=r'^\.rraid$', outgoing=True))
 async def rraid(event):
@@ -79,8 +87,6 @@ async def rraid(event):
         rraid_flag = True
         target_message = await event.get_reply_message()
         target_user_id = target_message.sender_id
-        await event.respond(f"Reply Raid activated. Now replying to messages from the target user.")
-        await event.delete()
     else:
         await event.respond("Reply to a user to start the reply raid.")
         await event.delete()
@@ -92,9 +98,6 @@ async def monitor(event):
         random_quote = random.choice(quotes)
         # Send quote while replying to the target user
         await event.respond(random_quote, reply_to=event.message.id)
-
-from telethon.tl.functions.contacts import ResolveUsernameRequest
-from telethon.tl.functions.users import GetFullUserRequest
 
 @userbot.on(events.NewMessage(pattern=r'^\.raid (\d+)( @\w+)?$', outgoing=True))
 async def raid(event):
@@ -114,7 +117,6 @@ async def raid(event):
             last_name = entity.last_name or ''  # Use empty string if no last name
             full_name = f"{first_name} {last_name}".strip()
 
-            await event.respond(f"Raid started for <a href='tg://user?id={target_user_id}'>{full_name}</a>!")
             for _ in range(count):
                 if not raid_flag:
                     break
@@ -132,7 +134,6 @@ async def raid(event):
             last_name = target_user.last_name or ''  # Use empty string if no last name
             full_name = f"{first_name} {last_name}".strip()
 
-            await event.respond(f"Raid started for <a href='tg://user?id={target_user.id}'>{full_name}</a>!")
             for _ in range(count):
                 if not raid_flag:
                     break
