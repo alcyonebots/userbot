@@ -183,25 +183,30 @@ async def start_userbot(string_session):
     await userbot.start()
     await userbot.run_until_disconnected()
 
-# Command handler to clone a session from string
 def clone(update: Update, context):
-    string_session = context.args[0] if context.args else None
-    if not string_session:
-        update.message.reply_text("Please provide a valid Telethon string session.")
-        return
+    try:
+        # Parse the session string from the command
+        if not context.args or len(context.args) == 0:
+            update.message.reply_text("Please provide a valid Telethon string session.")
+            return
 
-    # Save the session in MongoDB for the user
-    user_id = update.message.from_user.id
-    sessions_collection.update_one(
-        {"user_id": user_id},
-        {"$set": {"string_session": string_session}},
-        upsert=True
-    )
+        string_session = context.args[0]
 
-    update.message.reply_text("Session cloned successfully! Starting your userbot...")
+        # Save the session string in MongoDB for the user
+        user_id = update.message.from_user.id
+        sessions_collection.update_one(
+            {"user_id": user_id},
+            {"$set": {"string_session": string_session}},
+            upsert=True
+        )
 
-    # Run the userbot asynchronously for this user
-    asyncio.create_task(start_userbot(string_session))
+        update.message.reply_text("Session cloned successfully! Starting your userbot...")
+
+        # Run the userbot asynchronously for this user
+        asyncio.create_task(start_userbot(string_session))
+    except Exception as e:
+        logger.error(f"Error in /clone command: {e}")
+        update.message.reply_text(f"An error occurred: {e}")
 
 # Help command
 def help_command(update: Update, context):
