@@ -98,61 +98,50 @@ from telethon.tl.functions.users import GetFullUserRequest
 
 @userbot.on(events.NewMessage(pattern=r'^\.raid (\d+)( @\w+)?$', outgoing=True))
 async def raid(event):
-    global raid_flag, target_message
+    global raid_flag
     raid_flag = True
     count = int(event.pattern_match.group(1))
     username = event.pattern_match.group(2)
 
     if username:  # If a username is provided (e.g., @username)
-        username = username.strip()  # Remove the '@' symbol
-        username = username[1:]  # Strip the leading '@' symbol
-        
+        username = username.strip()[1:]  # Remove the leading '@'
         try:
-            # Try to resolve the username to get the user ID
+            # Resolve the username
             resolved_user = await userbot(ResolveUsernameRequest(username))
-            target_user = resolved_user.user.id
-            
-            # Retrieve the full user information
-            full_user = await userbot(GetFullUserRequest(target_user))
-            entity = full_user.user  # Get the entity object that contains user info
+            entity = resolved_user.users[0]  # Get the user entity
+            target_user_id = entity.id
             first_name = entity.first_name
             last_name = entity.last_name or ''  # Use empty string if no last name
-
-            # Construct the user's full name (first + last name)
             full_name = f"{first_name} {last_name}".strip()
 
-            await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>{full_name}</a>!")
+            await event.respond(f"Raid started for <a href='tg://user?id={target_user_id}'>{full_name}</a>!")
             for _ in range(count):
                 if not raid_flag:
                     break
                 random_quote = random.choice(quotes)
-                # Send the quote mentioning the user by their full name
-                await event.respond(f"<a href='tg://user?id={target_user}'>{full_name}</a> {random_quote}", parse_mode='html')
+                # Mention the user with their full name
+                await event.respond(f"<a href='tg://user?id={target_user_id}'>{full_name}</a> {random_quote}", parse_mode='html')
                 await asyncio.sleep(1)
         except Exception as e:
             await event.respond(f"Error: Could not resolve username @{username}.")
-            return
-    elif event.is_reply:  # If no username is provided, use the replied user's ID
-        target_message = await event.get_reply_message()
-        target_user = target_message.sender_id
+    elif event.is_reply:  # If replying to a message
+        try:
+            target_message = await event.get_reply_message()
+            target_user = target_message.sender  # Get the sender of the replied message
+            first_name = target_user.first_name
+            last_name = target_user.last_name or ''  # Use empty string if no last name
+            full_name = f"{first_name} {last_name}".strip()
 
-        # Retrieve the full user information
-        full_user = await userbot(GetFullUserRequest(target_user))
-        entity = full_user.user  # Get the entity object that contains user info
-        first_name = entity.first_name
-        last_name = entity.last_name or ''  # Use empty string if no last name
-
-        # Construct the user's full name (first + last name)
-        full_name = f"{first_name} {last_name}".strip()
-
-        await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>{full_name}</a>!")
-        for _ in range(count):
-            if not raid_flag:
-                break
-            random_quote = random.choice(quotes)
-            # Send the quote mentioning the user by their full name
-            await event.respond(f"<a href='tg://user?id={target_user}'>{full_name}</a> {random_quote}", parse_mode='html', reply_to=target_message.id)
-            await asyncio.sleep(1)
+            await event.respond(f"Raid started for <a href='tg://user?id={target_user.id}'>{full_name}</a>!")
+            for _ in range(count):
+                if not raid_flag:
+                    break
+                random_quote = random.choice(quotes)
+                # Mention the user with their full name
+                await event.respond(f"<a href='tg://user?id={target_user.id}'>{full_name}</a> {random_quote}", parse_mode='html')
+                await asyncio.sleep(1)
+        except Exception as e:
+            await event.respond("Error: Could not retrieve the target user.")
     else:
         await event.respond("You need to reply to a message or mention a username for the raid.")
     await event.delete()
