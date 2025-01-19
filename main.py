@@ -93,6 +93,9 @@ async def monitor(event):
         # Send quote while replying to the target user
         await event.respond(random_quote, reply_to=event.message.id)
 
+from telethon.tl.functions.contacts import ResolveUsernameRequest
+from telethon.tl.functions.users import GetFullUserRequest
+
 @userbot.on(events.NewMessage(pattern=r'^\.raid (\d+)( @\w+)?$', outgoing=True))
 async def raid(event):
     global raid_flag, target_message
@@ -111,8 +114,9 @@ async def raid(event):
             
             # Retrieve the full user information
             full_user = await userbot(GetFullUserRequest(target_user))
-            first_name = full_user.user.first_name  # Correct access to `user.first_name`
-            last_name = full_user.user.last_name or ''  # Correct access to `user.last_name`
+            entity = full_user.user  # Get the entity object that contains user info
+            first_name = entity.first_name
+            last_name = entity.last_name or ''  # Use empty string if no last name
 
             # Construct the user's full name (first + last name)
             full_name = f"{first_name} {last_name}".strip()
@@ -134,8 +138,9 @@ async def raid(event):
 
         # Retrieve the full user information
         full_user = await userbot(GetFullUserRequest(target_user))
-        first_name = full_user.user.first_name  # Correct access to `user.first_name`
-        last_name = full_user.user.last_name or ''  # Correct access to `user.last_name`
+        entity = full_user.user  # Get the entity object that contains user info
+        first_name = entity.first_name
+        last_name = entity.last_name or ''  # Use empty string if no last name
 
         # Construct the user's full name (first + last name)
         full_name = f"{first_name} {last_name}".strip()
