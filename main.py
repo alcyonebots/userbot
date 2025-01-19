@@ -184,12 +184,17 @@ async def help_command(event):
     await event.delete()
 
 # Main method to initialize both TelegramBot and Telethon userbot
-if __name__ == "__main__":
-    # Start the Telethon client
+async def main():
+    # Start the Telethon client in a background task
     userbot.start()
 
     # Start the Telegram bot
     start_bot()
 
-    # Run the Telethon client in the background
-    userbot.run_until_disconnected()
+    # Run the Telethon client
+    await userbot.run_until_disconnected()
+
+# Run everything asynchronously
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
