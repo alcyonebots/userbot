@@ -17,7 +17,7 @@ API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
 
 # MongoDB setup for storing sessions
 client = pymongo.MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")
-db = clien["Reaper_sessions"]
+db = client["Reaper_sessions"]
 sessions_collection = db["sessions"]
 
 # Initialize logging
