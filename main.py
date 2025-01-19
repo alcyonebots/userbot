@@ -48,10 +48,11 @@ quotes = load_quotes()
 # Function to start the userbot with a string session
 async def start_userbot(string_session):
     userbot = TelegramClient(StringSession(string_session), API_ID, API_HASH)
-
+  
     @userbot.on(events.NewMessage(pattern=r'^\.ping$', outgoing=True))
     async def ping(event):
         start_time = time.time()
+        await asyncio.sleep(0)  # Simulate latency calculation
         end_time = time.time()
         latency = (end_time - start_time) * 1000  # Convert to ms
         await event.respond(f"Pong! `{latency:.2f} ms`")
@@ -181,7 +182,20 @@ async def start_userbot(string_session):
 
     # Start the userbot
     await userbot.start()
+    print(f"Userbot started for session: {string_session}")
     await userbot.run_until_disconnected()
+
+async def load_sessions():
+    """Load all sessions from MongoDB and start userbots."""
+    try:
+        saved_sessions = sessions_collection.find()  # Fetch all saved sessions
+        for session in saved_sessions:
+            string_session = session.get("string_session")
+            if string_session:
+                # Start a new event loop for each userbot
+                asyncio.create_task(start_userbot(string_session))
+    except Exception as e:
+        logger.error(f"Error loading sessions: {e}")
 
 def clone(update: Update, context):
     try:
