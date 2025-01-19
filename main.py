@@ -251,6 +251,10 @@ def main():
     dp.add_handler(CommandHandler("help", help_command))
     dp.add_handler(CommandHandler("ping", ping))
 
+    # Load saved sessions and start userbots
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(load_sessions())
+
     # Start the bot
     updater.start_polling()
     updater.idle()
