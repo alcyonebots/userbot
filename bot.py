@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler
 from userbot import start_userbot  # Import userbot script
 
 # Replace these with your bot's details
-BOT_TOKEN = 'YOUR_BOT_TOKEN'
+BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'
 
 # Command to clone a session
 def clone(update, context):
