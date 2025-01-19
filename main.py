@@ -99,12 +99,13 @@ async def raid(event):
         count = int(event.pattern_match.group(1))
         target_message = await event.get_reply_message()
         target_user = target_message.sender_id
-        await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>target user</a>!")
+        await event.respond(f"Raid started!")
         for _ in range(count):
             if not raid_flag:
                 break
             random_quote = random.choice(quotes)
-            await event.respond(f"<a href='tg://user?id={target_user}'>@{target_user}</a> {random_quote}", parse_mode='html')
+            # Send random quote without mentioning the user
+            await event.respond(random_quote, reply_to=target_message.id)
             await asyncio.sleep(1)
     else:
         await event.respond("Reply to a user to raid them.")
