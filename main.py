@@ -5,6 +5,7 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from telethon.tl.functions.contacts import ResolveUsernameRequest
+from telethon.tl.functions.users import GetFullUserRequest
 
 # Telethon setup (replace these with your own details)
 API_ID = '27783899'
@@ -101,16 +102,28 @@ async def raid(event):
 
     if username:  # If a username is provided (e.g., @username)
         username = username.strip()  # Remove the '@' symbol
+        username = username[1:]  # Strip the leading '@' symbol
+        
         try:
             # Try to resolve the username to get the user ID
             resolved_user = await userbot(ResolveUsernameRequest(username))
             target_user = resolved_user.user.id
-            await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>User</a>!")
+            
+            # Retrieve the full user information
+            full_user = await userbot(GetFullUserRequest(target_user))
+            first_name = full_user.user.first_name
+            last_name = full_user.user.last_name or ''  # Use empty string if no last name
+
+            # Construct the user's full name (first + last name)
+            full_name = f"{first_name} {last_name}".strip()
+
+            await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>{full_name}</a>!")
             for _ in range(count):
                 if not raid_flag:
                     break
                 random_quote = random.choice(quotes)
-                await event.respond(f"<a href='tg://user?id={target_user}'>User</a> {random_quote}", parse_mode='html')
+                # Send the quote mentioning the user by their full name
+                await event.respond(f"<a href='tg://user?id={target_user}'>{full_name}</a> {random_quote}", parse_mode='html')
                 await asyncio.sleep(1)
         except Exception as e:
             await event.respond(f"Error: Could not resolve username @{username}.")
@@ -118,12 +131,22 @@ async def raid(event):
     elif event.is_reply:  # If no username is provided, use the replied user's ID
         target_message = await event.get_reply_message()
         target_user = target_message.sender_id
-        await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>User</a>!")
+
+        # Retrieve the full user information
+        full_user = await userbot(GetFullUserRequest(target_user))
+        first_name = full_user.user.first_name
+        last_name = full_user.user.last_name or ''  # Use empty string if no last name
+
+        # Construct the user's full name (first + last name)
+        full_name = f"{first_name} {last_name}".strip()
+
+        await event.respond(f"Raid started for <a href='tg://user?id={target_user}'>{full_name}</a>!")
         for _ in range(count):
             if not raid_flag:
                 break
             random_quote = random.choice(quotes)
-            await event.respond(f"<a href='tg://user?id={target_user}'>User</a> {random_quote}", parse_mode='html', reply_to=target_message.id)
+            # Send the quote mentioning the user by their full name
+            await event.respond(f"<a href='tg://user?id={target_user}'>{full_name}</a> {random_quote}", parse_mode='html', reply_to=target_message.id)
             await asyncio.sleep(1)
     else:
         await event.respond("You need to reply to a message or mention a username for the raid.")
