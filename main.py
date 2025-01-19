@@ -3,20 +3,11 @@ import random
 import time
 import asyncio
 from telethon import TelegramClient, events
-from telethon.errors import SessionPasswordNeededError
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
-from pymongo import MongoClient
-
-# MongoDB setup
-client_mongo = MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")  # Adjust with your MongoDB URI
-db = client_mongo["user_sessions"]
-sessions_collection = db["sessions"]
+from telethon.sessions import StringSession
 
 # Telethon setup (replace these with your own details)
 API_ID = '27783899'
 API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
-BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'
 
 # Global flags and variables
 echo_flag = False
@@ -37,47 +28,11 @@ def load_quotes():
 
 quotes = load_quotes()
 
-# MongoDB session existence check and creation
-def check_and_create_session(session_name: str):
-    if sessions_collection.find_one({"session": session_name}):
-        return False  # Session already exists
-    sessions_collection.insert_one({"session": session_name})
-    return True
+# Ask for Telethon string session in the console
+string_session = input("Enter your Telethon string session: ")
 
-# Handle /clone command for string session
-async def clone_session(update: Update, context: CallbackContext):
-    if context.args:
-        string_session = context.args[0]  # Get the string session
-        try:
-            # Create a new TelegramClient using the string session
-            client = TelegramClient('string_session_client', API_ID, API_HASH)
-            client.session = string_session  # Use the string session directly
-
-            # Start the client session with the provided string session
-            await client.start()  # Use await for asynchronous start
-
-            # If successful, reply to the user
-            if check_and_create_session(string_session):
-                await update.message.reply_text(f"Telethon string session cloned successfully!")
-            else:
-                await update.message.reply_text(f"Telethon string session already exists.")
-        except SessionPasswordNeededError:
-            await update.message.reply_text(f"Please enter your 2FA password to continue.")
-        except Exception as e:
-            await update.message.reply_text(f"Error with string session: {str(e)}")
-    else:
-        await update.message.reply_text("Please provide a Telethon string session. Usage: /clone <string_session>")
-
-# Start command handler to welcome users
-async def start(update: Update, context: CallbackContext):
-    start_message = """Welcome to the Telethon Userbot!
-Here are the available commands:
-- `/clone <string_session>` - Clone your session"""
-
-    await update.message.reply_text(start_message)
-
-# Telethon Userbot
-userbot = TelegramClient('userbot', API_ID, API_HASH)
+# Telethon Userbot using the string session
+userbot = TelegramClient(StringSession(string_session), API_ID, API_HASH)
 
 @userbot.on(events.NewMessage(pattern=r'^\.ping$', outgoing=True))
 async def ping(event):
@@ -178,26 +133,10 @@ async def help_command(event):
     await event.respond(help_text)
     await event.delete()
 
-# Function to start the python-telegram-bot
-def start_bot():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    # Add the command handler for /clone and /start
-    dp.add_handler(CommandHandler('clone', clone_session))
-    dp.add_handler(CommandHandler('start', start))
-
-    # Start the bot
-    updater.start_polling()
-    updater.idle()
-
-# Main method to initialize both TelegramBot and Telethon userbot
+# Main method to initialize Telethon userbot
 async def main():
     # Start the Telethon client in a background task
     await userbot.start()
-
-    # Start the Telegram bot
-    start_bot()
 
     # Run the Telethon client
     await userbot.run_until_disconnected()
