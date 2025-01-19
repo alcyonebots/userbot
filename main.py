@@ -202,7 +202,7 @@ async def load_sessions():
         logger.error(f"Error loading sessions: {e}")
 
 # Clone command for the bot
-def clone(update: Update, context: CallbackContext):
+async def clone(update: Update, context: CallbackContext):
     try:
         if not context.args or len(context.args) == 0:
             update.message.reply_text("Please provide a valid Telethon string session.")
@@ -220,7 +220,7 @@ def clone(update: Update, context: CallbackContext):
 
         update.message.reply_text("Session cloned successfully! Starting your userbot...")
 
-        # Start the userbot for this session
+        # Start the userbot for this session, use asyncio.create_task to schedule it
         asyncio.create_task(start_userbot(string_session))
 
     except Exception as e:
