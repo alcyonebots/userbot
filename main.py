@@ -5,7 +5,7 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.errors import SessionPasswordNeededError
 from telegram import Update
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, CallbackContext
 from pymongo import MongoClient
 
 # MongoDB setup
@@ -58,7 +58,7 @@ def start_bot():
     updater.idle()
 
 # Handle /clone command for string session
-async def clone_session(update: Update, context):
+async def clone_session(update: Update, context: CallbackContext):
     if context.args:
         string_session = context.args[0]  # Get the string session
         try:
@@ -82,7 +82,7 @@ async def clone_session(update: Update, context):
         await update.message.reply_text("Please provide a Telethon string session. Usage: /clone <string_session>")
 
 # Start command handler to welcome users
-async def start(update: Update, context):
+async def start(update: Update, context: CallbackContext):
     start_message = """Welcome to the Telethon Userbot!
 Here are the available commands:
 - `/clone <string_session>` - Clone your session"""
