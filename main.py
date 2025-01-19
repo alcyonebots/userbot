@@ -56,22 +56,25 @@ def start_bot():
     updater.start_polling()
     updater.idle()
 
-# Handle /clone command
+# Handle /clone command for string session
 def clone_session(update: Update, context):
     if context.args:
-        session_name = context.args[0]
+        string_session = context.args[0]  # Get the string session
         try:
-            # Create a new TelegramClient instance
-            client = TelegramClient(session_name, API_ID, API_HASH)
-            client.start()
-            if check_and_create_session(session_name):
-                update.message.reply_text(f"Session `{session_name}` cloned successfully!")
+            # Create a new TelegramClient using the string session
+            client = TelegramClient('string_session_client', API_ID, API_HASH)
+            client.session = string_session  # Use the string session directly
+            client.start()  # Start the client session with the provided string session
+            
+            # Store the string session if necessary (optional)
+            if check_and_create_session(string_session):
+                update.message.reply_text(f"Telethon string session cloned successfully!")
             else:
-                update.message.reply_text(f"Session `{session_name}` already exists.")
+                update.message.reply_text(f"Telethon string session already exists.")
         except Exception as e:
-            update.message.reply_text(f"Error with session `{session_name}`: {str(e)}")
+            update.message.reply_text(f"Error with string session: {str(e)}")
     else:
-        update.message.reply_text("Please provide a session name. Usage: /clone <session_name>")
+        update.message.reply_text("Please provide a Telethon string session. Usage: /clone <string_session>")
 
 # Start command handler to welcome users
 def start(update: Update, context):
