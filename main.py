@@ -111,8 +111,8 @@ async def raid(event):
             
             # Retrieve the full user information
             full_user = await userbot(GetFullUserRequest(target_user))
-            first_name = full_user.user.first_name
-            last_name = full_user.user.last_name or ''  # Use empty string if no last name
+            first_name = full_user.first_name
+            last_name = full_user.last_name or ''  # Use empty string if no last name
 
             # Construct the user's full name (first + last name)
             full_name = f"{first_name} {last_name}".strip()
@@ -134,8 +134,8 @@ async def raid(event):
 
         # Retrieve the full user information
         full_user = await userbot(GetFullUserRequest(target_user))
-        first_name = full_user.user.first_name
-        last_name = full_user.user.last_name or ''  # Use empty string if no last name
+        first_name = full_user.first_name
+        last_name = full_user.last_name or ''  # Use empty string if no last name
 
         # Construct the user's full name (first + last name)
         full_name = f"{first_name} {last_name}".strip()
