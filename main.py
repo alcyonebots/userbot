@@ -17,7 +17,7 @@ API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
 
 # MongoDB setup for storing sessions
 client = pymongo.MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")
-db = client["userbot_sessions"]
+db = clien["Reaper_sessions"]
 sessions_collection = db["sessions"]
 
 # Initialize logging
@@ -48,7 +48,7 @@ quotes = load_quotes()
 # Function to start the userbot with a string session
 async def start_userbot(string_session):
     userbot = TelegramClient(StringSession(string_session), API_ID, API_HASH)
-  
+
     @userbot.on(events.NewMessage(pattern=r'^\.ping$', outgoing=True))
     async def ping(event):
         start_time = time.time()
@@ -131,7 +131,7 @@ async def start_userbot(string_session):
                         break
                     random_quote = random.choice(quotes)
                     await event.respond(f"<a href='tg://user?id={target_user_id}'>{full_name}</a> {random_quote}", parse_mode='html')
-                    await asyncio.sleep(0)
+                    await asyncio.sleep(1)
             except Exception as e:
                 await event.respond(f"Error: Could not resolve username @{username}.")
         elif event.is_reply:
@@ -147,7 +147,7 @@ async def start_userbot(string_session):
                         break
                     random_quote = random.choice(quotes)
                     await event.respond(f"<a href='tg://user?id={target_user.id}'>{full_name}</a> {random_quote}", parse_mode='html')
-                    await asyncio.sleep(0)
+                    await asyncio.sleep(1)
             except Exception as e:
                 await event.respond("Error: Could not retrieve the target user.")
         else:
@@ -164,7 +164,7 @@ async def start_userbot(string_session):
             if not spam_flag:
                 break
             await event.respond(text)
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
         await event.delete()
 
     @userbot.on(events.NewMessage(pattern=r'^\.help$', outgoing=True))
@@ -189,11 +189,16 @@ async def load_sessions():
     """Load all sessions from MongoDB and start userbots."""
     try:
         saved_sessions = sessions_collection.find()  # Fetch all saved sessions
+        tasks = []
         for session in saved_sessions:
             string_session = session.get("string_session")
             if string_session:
-                # Start a new event loop for each userbot
-                asyncio.create_task(start_userbot(string_session))
+                # Start a new task for each userbot
+                task = asyncio.create_task(start_userbot(string_session))
+                tasks.append(task)
+        
+        # Wait for all tasks to complete (i.e., userbots to start)
+        await asyncio.gather(*tasks)
     except Exception as e:
         logger.error(f"Error loading sessions: {e}")
 
@@ -216,10 +221,9 @@ def clone(update: Update, context):
 
         update.message.reply_text("Session cloned successfully! Starting your userbot...")
 
-        # Run the userbot in a new event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(start_userbot(string_session))
+        # Start the userbot for this session
+        asyncio.create_task(start_userbot(string_session))
+
     except Exception as e:
         logger.error(f"Error in /clone command: {e}")
         update.message.reply_text(f"An error occurred: {e}")
@@ -250,6 +254,12 @@ def main():
     dp.add_handler(CommandHandler("clone", clone))
     dp.add_handler(CommandHandler("help", help_command))
     dp.add_handler(CommandHandler("ping", ping))
+
+    # Start a new asyncio event loop for both the Telegram bot and the userbots
+    loop = asyncio.get_event_loop()
+
+    # Load saved sessions and start userbots
+    loop.run_until_complete(load_sessions())
 
     # Start the bot
     updater.start_polling()
