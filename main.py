@@ -146,7 +146,7 @@ async def rraid(event):
         await event.respond(f"@{target_user.sender.username} {random_quote}")
         await event.delete()  # Delete the command message
     else:
-        await event.respond("Reply to a message to send a random quote.")
+        await event.respond("Reply to a message use this command.")
         await event.delete()  # Delete the command message
 
 # Help command handler (.help)
