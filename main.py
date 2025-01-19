@@ -1,11 +1,11 @@
 import os
 import random
 import time
+import asyncio
 from telethon import TelegramClient, events
 from telegram import Update
 from telegram.ext import Updater, CommandHandler
 from pymongo import MongoClient
-from typing import List
 
 # MongoDB setup
 client_mongo = MongoClient("mongodb://localhost:27017/")  # Adjust with your MongoDB URI
@@ -13,12 +13,20 @@ db = client_mongo["user_sessions"]
 sessions_collection = db["sessions"]
 
 # Telethon setup (replace these with your own details)
-API_ID = '27783899'
-API_HASH = '30a0620127bd5816e9f5c69e1c426cf5'
-BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'
+API_ID = 'your_api_id'
+API_HASH = 'your_api_hash'
+BOT_TOKEN = 'your_bot_token'
+
+# Global flags and variables
+echo_flag = False
+rraid_flag = False
+raid_flag = False
+spam_flag = False
+target_user_id = None  # Target user ID for rraid
+
 # Load quotes from an external file
 def load_quotes():
-    quotes_file = 'chudai.txt'  # Make sure to provide the correct path to the quotes file
+    quotes_file = 'chudai.txt'  # Path to the quotes file
     if os.path.exists(quotes_file):
         with open(quotes_file, 'r') as file:
             quotes = file.readlines()
@@ -32,7 +40,6 @@ quotes = load_quotes()
 def check_and_create_session(session_name: str):
     if sessions_collection.find_one({"session": session_name}):
         return False  # Session already exists
-    # Create the session and store it in the database
     sessions_collection.insert_one({"session": session_name})
     return True
 
@@ -45,19 +52,11 @@ def start_bot():
     dp.add_handler(CommandHandler('clone', clone_session))
     dp.add_handler(CommandHandler('start', start))
 
-    # Add the userbot-related events to the dispatcher
-    dp.add_handler(CommandHandler('ping', ping))
-    dp.add_handler(CommandHandler('stop', stop))
-    dp.add_handler(CommandHandler('help', help))
-    dp.add_handler(CommandHandler('echo', echo))
-    dp.add_handler(CommandHandler('raid', raid))
-    dp.add_handler(CommandHandler('rraid', rraid))
-
     # Start the bot
     updater.start_polling()
     updater.idle()
 
-# Bot to handle /clone command
+# Handle /clone command
 def clone_session(update: Update, context):
     if context.args:
         session_name = context.args[0]
@@ -66,106 +65,127 @@ def clone_session(update: Update, context):
             client = TelegramClient(session_name, API_ID, API_HASH)
             client.start()
             if check_and_create_session(session_name):
-                update.message.reply_text(f"Session cloned successfully!")
+                update.message.reply_text(f"Session `{session_name}` cloned successfully!")
             else:
-                update.message.reply_text(f"Session already exists.")
+                update.message.reply_text(f"Session `{session_name}` already exists.")
         except Exception as e:
-            update.message.reply_text(f"Error with session {str(e)}")
+            update.message.reply_text(f"Error with session `{session_name}`: {str(e)}")
     else:
-        update.message.reply_text("Please provide a telethon session. Usage: /clone <telethon session>")
+        update.message.reply_text("Please provide a session name. Usage: /clone <session_name>")
 
 # Start command handler to welcome users
 def start(update: Update, context):
     start_message = """Welcome to the Telethon Userbot!
 Here are the available commands:
-- `/clone <session>` - Clone your session
-- `.ping` - Check latency
-- `.raid <number of messages>` - Start raid with random quotes
-- `.spam <number of messages> <text>` - Spam a custom message
-- `.stop` - Stop any ongoing actions (raid or spam)
-- `.echo` - Echo the message you reply to
-- `.rraid` - Reply with random quotes to a mentioned user
-"""
+- `/clone <session_name>` - Clone your session"""
+
     update.message.reply_text(start_message)
 
-# Telethon Userbot (for handling commands like .ping, .raid, etc.)
+# Telethon Userbot
+userbot = TelegramClient('userbot', API_ID, API_HASH)
+
+@userbot.on(events.NewMessage(pattern=r'^\.ping$', outgoing=True))
 async def ping(event):
     start_time = time.time()
     await event.respond("Pong!")
     end_time = time.time()
     latency = (end_time - start_time) * 1000  # Convert to ms
     await event.respond(f"Pong! `{latency:.2f} ms`")
-    await event.delete()  # Delete the command message
+    await event.delete()
 
-@client.on(events.NewMessage(pattern=r'^\.ping$', outgoing=True))
-async def ping_handler(event):
-    await ping(event)
-
-# Handle .stop (to stop any ongoing raids or spams)
+@userbot.on(events.NewMessage(pattern=r'^\.stop$', outgoing=True))
 async def stop(event):
-    global stop_flag
-    stop_flag = True
+    global echo_flag, rraid_flag, raid_flag, spam_flag, target_user_id
+    echo_flag = False
+    rraid_flag = False
+    raid_flag = False
+    spam_flag = False
+    target_user_id = None
     await event.respond("All ongoing actions stopped.")
-    await event.delete()  # Delete the command message
+    await event.delete()
 
-# Echo handler
+@userbot.on(events.NewMessage(pattern=r'^\.echo$', outgoing=True))
 async def echo(event):
+    global echo_flag
     if event.is_reply:
+        echo_flag = True
         original_message = await event.get_reply_message()
-        await event.respond(original_message.text)
-        await event.delete()  # Delete the command message
+        await event.respond("Echo mode activated.")
+        while echo_flag:
+            await event.respond(original_message.text)
+            await asyncio.sleep(2)
     else:
-        await event.respond("Reply to a message to echo it.")
+        await event.respond("Reply to a message to start echo mode.")
+    await event.delete()
+
+@userbot.on(events.NewMessage(pattern=r'^\.rraid$', outgoing=True))
+async def rraid(event):
+    global rraid_flag, target_user_id
+    if event.is_reply:
+        rraid_flag = True
+        target_message = await event.get_reply_message()
+        target_user_id = target_message.sender_id
+        await event.respond("Reply Raid activated.")
+        await event.delete()
+    else:
+        await event.respond("Reply to a user to start the reply raid.")
         await event.delete()
 
-# Raid handler (.raid)
-async def raid(event, number_of_messages: int, target_user: str):
-    stop_flag = False
-    for _ in range(number_of_messages):
-        if stop_flag:
-            break
+@userbot.on(events.NewMessage())
+async def monitor(event):
+    global rraid_flag, target_user_id
+    if rraid_flag and event.sender_id == target_user_id:
         random_quote = random.choice(quotes)
-        await event.respond(f"{target_user} {random_quote}")
-        await event.delete()  # Delete the command message
+        await event.respond(random_quote)
 
-# Spam handler (.spam)
-async def spam(event, number_of_messages: int, text: str):
-    stop_flag = False
-    for _ in range(number_of_messages):
-        if stop_flag:
+@userbot.on(events.NewMessage(pattern=r'^\.raid (\d+)$', outgoing=True))
+async def raid(event):
+    global raid_flag
+    raid_flag = True
+    if event.is_reply:
+        count = int(event.pattern_match.group(1))
+        target_message = await event.get_reply_message()
+        target_user = target_message.sender_id
+        await event.respond(f"Raid started!")
+        for _ in range(count):
+            if not raid_flag:
+                break
+            random_quote = random.choice(quotes)
+            await event.respond(f"@{target_user} {random_quote}")
+            await asyncio.sleep(1)
+    else:
+        await event.respond("Reply to a user to raid them.")
+    await event.delete()
+
+@userbot.on(events.NewMessage(pattern=r'^\.spam (\d+) (.+)$', outgoing=True))
+async def spam(event):
+    global spam_flag
+    spam_flag = True
+    count = int(event.pattern_match.group(1))
+    text = event.pattern_match.group(2)
+    for _ in range(count):
+        if not spam_flag:
             break
         await event.respond(text)
-        await event.delete()  # Delete the command message
+        await asyncio.sleep(1)
+    await event.delete()
 
-# Random raid handler (.rraid)
-@client.on(events.NewMessage(pattern=r'^\.rraid$', outgoing=True))
-async def rraid(event):
-    if event.is_reply:
-        target_user = await event.get_reply_message()
-        random_quote = random.choice(quotes)
-        await event.respond(f"@{target_user.sender.username} {random_quote}")
-        await event.delete()  # Delete the command message
-    else:
-        await event.respond("Reply to a message use this command.")
-        await event.delete()  # Delete the command message
-
-# Help command handler (.help)
-async def help(event):
+@userbot.on(events.NewMessage(pattern=r'^\.help$', outgoing=True))
+async def help_command(event):
     help_text = """Available commands:
     .ping - Check latency
     .raid <number of messages> - Start raid with random quotes
     .spam <number of messages> <text> - Spam a custom message
-    .stop - Stop any ongoing actions (raid or spam)
-    .echo - Echo the message you reply to
-    .rraid - Reply with random quotes to a mentioned user
+    .stop - Stop any ongoing actions (raid, spam, echo, rraid)
+    .echo - Continuously echo the message you reply to
+    .rraid - Continuously reply with random quotes when the target user sends a message
     """
     await event.respond(help_text)
-    await event.delete()  # Delete the command message
+    await event.delete()
 
 # Main method to initialize both TelegramBot and Telethon userbot
 if __name__ == "__main__":
     # Start the Telethon client
-    userbot = TelegramClient('userbot', API_ID, API_HASH)
     userbot.start()
 
     # Start the Telegram bot
