@@ -5,7 +5,6 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from telethon.tl.functions.contacts import ResolveUsernameRequest
-from telethon.tl.functions.users import GetFullUserRequest
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 import logging
@@ -131,7 +130,7 @@ async def start_userbot(string_session):
                         break
                     random_quote = random.choice(quotes)
                     await event.respond(f"<a href='tg://user?id={target_user_id}'>{full_name}</a> {random_quote}", parse_mode='html')
-                    await asyncio.sleep(0)
+                    await asyncio.sleep(1)
             except Exception as e:
                 await event.respond(f"Error: Could not resolve username @{username}.")
         elif event.is_reply:
@@ -147,7 +146,7 @@ async def start_userbot(string_session):
                         break
                     random_quote = random.choice(quotes)
                     await event.respond(f"<a href='tg://user?id={target_user.id}'>{full_name}</a> {random_quote}", parse_mode='html')
-                    await asyncio.sleep(0)
+                    await asyncio.sleep(1)
             except Exception as e:
                 await event.respond("Error: Could not retrieve the target user.")
         else:
@@ -164,7 +163,7 @@ async def start_userbot(string_session):
             if not spam_flag:
                 break
             await event.respond(text)
-            await asyncio.sleep(p)
+            await asyncio.sleep(1)
         await event.delete()
 
     @userbot.on(events.NewMessage(pattern=r'^\.help$', outgoing=True))
@@ -250,11 +249,13 @@ def main():
     dp.add_handler(CommandHandler("clone", clone))
     dp.add_handler(CommandHandler("help", help_command))
 
-    # Load saved sessions and start userbots
-    asyncio.run(load_sessions())
-
-    # Start the bot
+    # Start the Telegram bot
     updater.start_polling()
+
+    # Start userbot sessions
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(load_sessions())
+
     updater.idle()
 
 if __name__ == '__main__':
