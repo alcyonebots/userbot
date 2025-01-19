@@ -44,19 +44,6 @@ def check_and_create_session(session_name: str):
     sessions_collection.insert_one({"session": session_name})
     return True
 
-# Start the bot using python-telegram-bot
-def start_bot():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    # Add the command handler for /clone and /start
-    dp.add_handler(CommandHandler('clone', clone_session))
-    dp.add_handler(CommandHandler('start', start))
-
-    # Start the bot
-    updater.start_polling()
-    updater.idle()
-
 # Handle /clone command for string session
 async def clone_session(update: Update, context: CallbackContext):
     if context.args:
@@ -191,12 +178,25 @@ async def help_command(event):
     await event.respond(help_text)
     await event.delete()
 
+# Function to start the python-telegram-bot
+def start_bot():
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    # Add the command handler for /clone and /start
+    dp.add_handler(CommandHandler('clone', clone_session))
+    dp.add_handler(CommandHandler('start', start))
+
+    # Start the bot
+    updater.start_polling()
+    updater.idle()
+
 # Main method to initialize both TelegramBot and Telethon userbot
 async def main():
     # Start the Telethon client in a background task
-    userbot.start()
+    await userbot.start()
 
-    # Start the Telegram bot asynchronously
+    # Start the Telegram bot
     start_bot()
 
     # Run the Telethon client
