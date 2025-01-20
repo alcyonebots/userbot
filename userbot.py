@@ -2,7 +2,6 @@ from pyrogram import Client, filters
 import random
 import asyncio
 from db import quotes
-import time
 
 # Global flags and variables
 echo_flag = False
@@ -12,6 +11,7 @@ spam_flag = False
 target_user_id = None  # Target user ID for rraid
 target_message = None  # Target message for echo and raid
 
+
 async def start_userbot(string_session, user_id):
     """Start a userbot for a given session."""
     userbot = Client(name=f"userbot_{user_id}", session_string=string_session)
@@ -19,9 +19,9 @@ async def start_userbot(string_session, user_id):
     @userbot.on_message(filters.command("ping") & filters.me)
     async def ping(_, message):
         """Respond to .ping with latency."""
-        start_time = time.time()
+        start_time = asyncio.get_event_loop().time()
         sent_message = await message.reply("Pong!")
-        latency = (time.time() - start_time) * 1000
+        latency = (asyncio.get_event_loop().time() - start_time) * 1000
         await sent_message.edit_text(f"Pong! `{latency:.2f} ms`")
 
     @userbot.on_message(filters.command("echo") & filters.me)
@@ -124,4 +124,4 @@ async def start_userbot(string_session, user_id):
     # Start the userbot
     await userbot.start()
     print(f"Userbot started for user {user_id}")
-    await userbot.run()
+    await userbot.idle()
