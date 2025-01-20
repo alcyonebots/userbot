@@ -56,15 +56,11 @@ async def main():
     # Load saved sessions and start userbots
     sessions = load_sessions()
 
-    # Run polling without using asyncio.run
-    await application.run_polling()
+    # Start the bot
+    await application.start()
+    print("Bot started. Press Ctrl+C to stop.")
+    await asyncio.Event().wait()  # Keep the bot running indefinitely
+    await application.stop()  # Gracefully stop the bot when exiting
 
 if __name__ == '__main__':
-    try:
-        asyncio.get_event_loop().run_until_complete(main())
-    except RuntimeError as e:
-        # This ensures compatibility with environments where the loop is already running
-        if "This event loop is already running" in str(e):
-            asyncio.run(main())
-        else:
-            raise
+    asyncio.run(main())
