@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 import random
 import asyncio
-from db import quotes  # Assuming quotes are stored in a file or DB
+from db import quotes
 import time
 
 # Global flags and variables
@@ -125,4 +125,3 @@ async def start_userbot(string_session, user_id):
     await userbot.start()
     print(f"Userbot started for user {user_id}")
     await userbot.run()
-
