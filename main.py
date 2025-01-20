@@ -56,11 +56,13 @@ async def main():
     # Load saved sessions and start userbots
     sessions = load_sessions()
 
-    # Start the bot
-    await application.start()
+    # Initialize, start the bot, and keep it running
+    await application.initialize()  # Prepare the bot
+    await application.start()  # Start the bot
     print("Bot started. Press Ctrl+C to stop.")
     await asyncio.Event().wait()  # Keep the bot running indefinitely
     await application.stop()  # Gracefully stop the bot when exiting
+    await application.shutdown()  # Cleanup resources when shutting down
 
 if __name__ == '__main__':
     asyncio.run(main())
