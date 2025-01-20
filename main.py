@@ -1,79 +1,66 @@
-import logging
 from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-)
-import pymongo
+from telegram.ext import Updater, CommandHandler, CallbackContext
 import asyncio
+from userbot import start_userbot
+from db import load_sessions, save_session
 
-# MongoDB setup for storing sessions
-client = pymongo.MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")
-db = client["reaper"]
-sessions_collection = db["sessions"]
+# Clone command for the bot
+async def clone(update: Update, context: CallbackContext):
+    try:
+        if not context.args or len(context.args) == 0:
+            update.message.reply_text("Please provide a valid Telethon string session.")
+            return
 
-# Initialize logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+        string_session = context.args[0]
 
-# Command Handlers
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Start command handler."""
-    await update.message.reply_text("Welcome! Use /help to see available commands.")
+        # Save the session string in MongoDB for the user
+        user_id = update.message.from_user.id
+        save_session(user_id, string_session)
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Help command handler."""
+        update.message.reply_text("Session cloned successfully! Starting your userbot...")
+
+        # Start the userbot for this session
+        asyncio.create_task(start_userbot(string_session, user_id))
+
+    except Exception as e:
+        update.message.reply_text(f"An error occurred: {e}")
+
+# Help command
+def help_command(update: Update, context: CallbackContext):
     help_text = """Available commands:
-    /clone <session> - Clone a Telethon session
     /ping - Check latency
+    /raid <number of messages> - Start raid with random quotes
+    /spam <number of messages> <text> - Spam a custom message
+    /stop - Stop any ongoing actions (raid, spam, echo, rraid)
+    /echo - Continuously echo the message you reply to
+    /rraid - Continuously reply with random quotes when the target user sends a message
     """
-    await update.message.reply_text(help_text)
+    update.message.reply_text(help_text)
 
-async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Ping command to check bot latency."""
-    latency = context.application.updater.request.read_timeout
-    await update.message.reply_text(f"Pong! Latency: {latency * 1000:.2f} ms")
+# Ping command
+def ping(update: Update, context: CallbackContext):
+    update.message.reply_text("Pong!")
 
-async def clone(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Clone session command handler."""
-    if not context.args or len(context.args) == 0:
-        await update.message.reply_text("Please provide a valid session string.")
-        return
-
-    string_session = context.args[0]
-    user_id = update.effective_user.id
-
-    # Save session to MongoDB
-    sessions_collection.update_one(
-        {"user_id": user_id},
-        {"$set": {"string_session": string_session}},
-        upsert=True,
-    )
-    await update.message.reply_text("Session cloned successfully!")
-
-    # Start the userbot for this session
-    from userbot import start_userbot
-
-    asyncio.create_task(start_userbot(string_session, user_id))
-
-# Main function to start the bot
+# Main bot setup
 def main():
-    BOT_TOKEN = "7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw"
+    BOT_TOKEN = 'YOUR_BOT_TOKEN'  # Replace with your bot token
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-    # Create the Application
-    application = Application.builder().token(BOT_TOKEN).build()
+    # Command handlers
+    dp.add_handler(CommandHandler("clone", clone))
+    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("ping", ping))
 
-    # Add command handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("ping", ping))
-    application.add_handler(CommandHandler("clone", clone))
+    # Start the Telegram bot
+    updater.start_polling()
 
-    # Start the bot
-    application.run_polling()
+    # Load saved sessions and start userbots
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(load_sessions())
 
-if __name__ == "__main__":
+    # Run idle to keep the bot running
+    updater.idle()
+
+if __name__ == '__main__':
     main()
