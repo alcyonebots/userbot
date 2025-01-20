@@ -14,7 +14,7 @@ target_message = None  # Target message for echo and raid
 
 async def start_userbot(string_session, user_id):
     """Start a userbot for a given session."""
-    userbot = Client(name=f"userbot_{user_id}", session_string=string_session)
+    app = Client(name=f"userbot_{user_id}", session_string=string_session)
 
     @userbot.on_message(filters.command("ping") & filters.me)
     async def ping(_, message):
@@ -121,7 +121,4 @@ async def start_userbot(string_session, user_id):
             random_quote = random.choice(quotes)
             await message.reply(random_quote)
 
-    # Start the userbot
-    await userbot.start()
-    print(f"Userbot started for user {user_id}")
-    await userbot.idle()
+    app.run()
