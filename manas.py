@@ -21,10 +21,14 @@ string_session = input("Enter your Pyrogram string session: ")
 # Initialize the userbot
 app = Client(name="userbot", session_string=string_session)
 
+
 @app.on_message(filters.regex(r"^\.") & filters.me)
 async def handle_dot_command(_, message):
     """Handle commands starting with a dot (.) and delete the command message."""
     command = message.text.split()[0]  # Get the command part
+
+    # Declare the global variables first before using them
+    global echo_flag, rraid_flag, raid_flag, spam_flag, target_user_id, target_message
 
     # Delete the command message after processing
     try:
@@ -38,7 +42,6 @@ async def handle_dot_command(_, message):
             await sent_message.edit_text(f"Pong! `{latency:.2f} ms`")
 
         elif command == ".echo":
-            global echo_flag, target_message
             if message.reply_to_message:
                 target_message = message.reply_to_message
                 echo_flag = True
@@ -47,7 +50,6 @@ async def handle_dot_command(_, message):
                 await message.reply("Reply to a message to start echo mode.")
 
         elif command == ".rraid":
-            global rraid_flag, target_user_id
             if message.reply_to_message:
                 target_user_id = message.reply_to_message.from_user.id
                 rraid_flag = True
@@ -56,7 +58,7 @@ async def handle_dot_command(_, message):
                 await message.reply("Reply to a message to start the reply raid.")
 
         elif command == ".stop":
-            global echo_flag, rraid_flag, raid_flag, spam_flag, target_user_id, target_message
+            # Reset all global flags and variables
             echo_flag = False
             rraid_flag = False
             raid_flag = False
@@ -114,6 +116,6 @@ async def monitor(_, message):
         random_quote = random.choice(quotes)
         await message.reply(random_quote)
 
+
 # Start the userbot
 app.run()
-
