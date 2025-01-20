@@ -1,4 +1,5 @@
 import os
+import json
 
 # Path to store user sessions and quotes
 SESSION_FILE = "sessions.json"
@@ -17,9 +18,9 @@ def load_sessions():
 def save_session(user_id, string_session):
     """Saves a session string for a specific user to sessions.json."""
     sessions = load_sessions()
-    sessions[user_id] = string_session
+    sessions[str(user_id)] = string_session
     with open(SESSION_FILE, "w") as f:
-        json.dump(sessions, f)
+        json.dump(sessions, f, indent=4)
 
 # Load quotes from the chudai.txt file
 def load_quotes():
