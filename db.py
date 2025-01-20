@@ -1,4 +1,5 @@
 import pymongo
+import os
 
 # MongoDB setup
 client = pymongo.MongoClient("mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net/")
