@@ -1,6 +1,6 @@
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-import asyncio
 from userbot import start_userbot
 from db import load_sessions, save_session
 
@@ -8,12 +8,12 @@ from db import load_sessions, save_session
 async def clone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if not context.args or len(context.args) == 0:
-            await update.message.reply_text("Please provide a valid session string.")
+            await update.message.reply_text("Please provide a valid Telethon string session.")
             return
 
         string_session = context.args[0]
 
-        # Save the session string in the database
+        # Save the session string in MongoDB for the user
         user_id = update.message.from_user.id
         save_session(user_id, string_session)
 
@@ -45,7 +45,7 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def main():
     BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'  # Replace with your bot token
 
-    # Create the Application and pass it the bot token
+    # Create application instance
     application = Application.builder().token(BOT_TOKEN).build()
 
     # Command handlers
@@ -53,13 +53,10 @@ async def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("ping", ping))
 
-    # Start the Telegram bot
-    await application.initialize()
+    # Load saved sessions and start userbots (this is a sync function, no need for await)
+    sessions = load_sessions()  # Load the sessions (sync call)
 
-    # Load saved sessions and start userbots
-    await load_sessions()
-
-    # Run idle to keep the bot running
+    # Start the bot
     await application.run_polling()
 
 if __name__ == '__main__':
