@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 import random
 import asyncio
-from db import quotes
+from db import quotes  # Assuming quotes are loaded from db.py
 
 # Global flags and variables
 echo_flag = False
@@ -124,4 +124,4 @@ async def start_userbot(string_session, user_id):
     # Start the userbot
     await userbot.start()
     print(f"Userbot started for user {user_id}")
-    await userbot.idle()
+    await userbot.run()  # Replaces the idle() method in pyrogram v2.x
