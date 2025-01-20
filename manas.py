@@ -16,15 +16,15 @@ target_user_id = None  # Target user ID for rraid
 target_message = None  # Target message for echo and raid
 
 
-async def start_userbot():
+def start_userbot():
     """Start a userbot for the given session."""
     # Ask for the Pyrogram session string
     string_session = input("Enter your Pyrogram string session: ")
     
     # Initialize the userbot client
-    userbot = Client(name="userbot", session_string=string_session)
+    app = Client(name="userbot", session_string=string_session)
 
-    @userbot.on_message(filters.command("ping") & filters.me)
+    @app.on_message(filters.command("ping") & filters.me)
     async def ping(_, message):
         """Respond to .ping with latency."""
         start_time = message.date.timestamp()
@@ -32,7 +32,7 @@ async def start_userbot():
         latency = (message.date.timestamp() - start_time) * 1000
         await sent_message.edit_text(f"Pong! `{latency:.2f} ms`")
 
-    @userbot.on_message(filters.command("echo") & filters.me)
+    @app.on_message(filters.command("echo") & filters.me)
     async def echo(_, message):
         """Start echo mode."""
         global echo_flag, target_message
@@ -43,7 +43,7 @@ async def start_userbot():
         else:
             await message.reply("Reply to a message to start echo mode.")
 
-    @userbot.on_message(filters.command("rraid") & filters.me)
+    @app.on_message(filters.command("rraid") & filters.me)
     async def rraid(_, message):
         """Start replying with random quotes to a target user's messages."""
         global rraid_flag, target_user_id
@@ -55,7 +55,7 @@ async def start_userbot():
         else:
             await message.reply("Reply to a message to start the reply raid.")
 
-    @userbot.on_message(filters.command("stop") & filters.me)
+    @app.on_message(filters.command("stop") & filters.me)
     async def stop(_, message):
         """Stop all ongoing actions."""
         global echo_flag, rraid_flag, raid_flag, spam_flag, target_user_id, target_message
@@ -67,7 +67,7 @@ async def start_userbot():
         target_message = None
         await message.reply("All actions stopped.")
 
-    @userbot.on_message(filters.command("spam") & filters.me)
+    @app.on_message(filters.command("spam") & filters.me)
     async def spam(_, message):
         """Spam a custom message."""
         try:
@@ -79,7 +79,7 @@ async def start_userbot():
         except (IndexError, ValueError):
             await message.reply("Usage: .spam <count> <text>")
 
-    @userbot.on_message(filters.command("raid") & filters.me)
+    @app.on_message(filters.command("raid") & filters.me)
     async def raid(_, message):
         """Start a raid with random quotes."""
         try:
@@ -92,7 +92,7 @@ async def start_userbot():
         except (IndexError, ValueError):
             await message.reply("Usage: .raid <count>")
 
-    @userbot.on_message(filters.command("help") & filters.me)
+    @app.on_message(filters.command("help") & filters.me)
     async def help_command(_, message):
         """Show help for userbot commands."""
         help_text = """Userbot Commands:
@@ -105,7 +105,7 @@ async def start_userbot():
         """
         await message.reply(help_text)
 
-    @userbot.on_message()
+    @app.on_message()
     async def monitor(_, message):
         """Monitor messages for ongoing actions."""
         global echo_flag, rraid_flag, target_user_id, target_message
@@ -119,16 +119,12 @@ async def start_userbot():
             random_quote = random.choice(quotes)
             await message.reply(random_quote)
 
-    # Start the userbot
-    await userbot.start()
-    logger.info("Userbot started successfully. Press Ctrl+C to stop.")
-    await userbot.idle()
-
+    # Start the userbot using app.run()
+    app.run()
 
 if __name__ == "__main__":
-    import asyncio
     try:
-        asyncio.run(start_userbot())
+        start_userbot()
     except KeyboardInterrupt:
         logger.info("Userbot stopped manually.")
     except Exception as e:
