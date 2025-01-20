@@ -53,8 +53,10 @@ async def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("ping", ping))
 
-    # Load saved sessions and start userbots (this is a sync function, no need for await)
-    sessions = load_sessions()  # Load the sessions (sync call)
+    # Load saved sessions and start userbots
+    sessions = load_sessions()
+    for user_id, string_session in sessions.items():
+        asyncio.create_task(start_userbot(string_session, user_id))
 
     # Start the bot
     await application.run_polling()
