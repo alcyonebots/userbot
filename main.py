@@ -1,32 +1,32 @@
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, ContextTypes
 import asyncio
 from userbot import start_userbot
 from db import load_sessions, save_session
 
 # Clone command for the bot
-async def clone(update: Update, context: CallbackContext):
+async def clone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if not context.args or len(context.args) == 0:
-            update.message.reply_text("Please provide a valid Telethon string session.")
+            await update.message.reply_text("Please provide a valid session string.")
             return
 
         string_session = context.args[0]
 
-        # Save the session string in MongoDB for the user
+        # Save the session string in the database
         user_id = update.message.from_user.id
         save_session(user_id, string_session)
 
-        update.message.reply_text("Session cloned successfully! Starting your userbot...")
+        await update.message.reply_text("Session cloned successfully! Starting your userbot...")
 
         # Start the userbot for this session
         asyncio.create_task(start_userbot(string_session, user_id))
 
     except Exception as e:
-        update.message.reply_text(f"An error occurred: {e}")
+        await update.message.reply_text(f"An error occurred: {e}")
 
 # Help command
-def help_command(update: Update, context: CallbackContext):
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = """Available commands:
     /ping - Check latency
     /raid <number of messages> - Start raid with random quotes
@@ -35,32 +35,32 @@ def help_command(update: Update, context: CallbackContext):
     /echo - Continuously echo the message you reply to
     /rraid - Continuously reply with random quotes when the target user sends a message
     """
-    update.message.reply_text(help_text)
+    await update.message.reply_text(help_text)
 
 # Ping command
-def ping(update: Update, context: CallbackContext):
-    update.message.reply_text("Pong!")
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Pong!")
 
 # Main bot setup
-def main():
-    BOT_TOKEN = 'YOUR_BOT_TOKEN'  # Replace with your bot token
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+async def main():
+    BOT_TOKEN = '7734408721:AAHwWAuqGoAWrDuKSIstabuRHIaJzltQTaw'  # Replace with your bot token
+
+    # Create the Application and pass it the bot token
+    application = Application.builder().token(BOT_TOKEN).build()
 
     # Command handlers
-    dp.add_handler(CommandHandler("clone", clone))
-    dp.add_handler(CommandHandler("help", help_command))
-    dp.add_handler(CommandHandler("ping", ping))
+    application.add_handler(CommandHandler("clone", clone))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("ping", ping))
 
     # Start the Telegram bot
-    updater.start_polling()
+    await application.initialize()
 
     # Load saved sessions and start userbots
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(load_sessions())
+    await load_sessions()
 
     # Run idle to keep the bot running
-    updater.idle()
+    await application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
