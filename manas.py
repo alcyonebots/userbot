@@ -1,7 +1,11 @@
+import logging
 from pyrogram import Client, filters
 import random
-import asyncio
 from db import quotes
+
+# Logging configuration for debugging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Global flags and variables
 echo_flag = False
@@ -12,20 +16,20 @@ target_user_id = None  # Target user ID for rraid
 target_message = None  # Target message for echo and raid
 
 
-async def start_userbot(user_id):
-    """Start a userbot for a given session."""
-    
-    # Ask for session string
+async def start_userbot():
+    """Start a userbot for the given session."""
+    # Ask for the Pyrogram session string
     string_session = input("Enter your Pyrogram string session: ")
     
-    userbot = Client(name=f"userbot_{user_id}", session_string=string_session)
+    # Initialize the userbot client
+    userbot = Client(name="userbot", session_string=string_session)
 
     @userbot.on_message(filters.command("ping") & filters.me)
     async def ping(_, message):
         """Respond to .ping with latency."""
-        start_time = asyncio.get_event_loop().time()
+        start_time = message.date.timestamp()
         sent_message = await message.reply("Pong!")
-        latency = (asyncio.get_event_loop().time() - start_time) * 1000
+        latency = (message.date.timestamp() - start_time) * 1000
         await sent_message.edit_text(f"Pong! `{latency:.2f} ms`")
 
     @userbot.on_message(filters.command("echo") & filters.me)
@@ -66,33 +70,25 @@ async def start_userbot(user_id):
     @userbot.on_message(filters.command("spam") & filters.me)
     async def spam(_, message):
         """Spam a custom message."""
-        global spam_flag
         try:
             args = message.text.split(" ", 2)
             count = int(args[1])
             text = args[2]
-            spam_flag = True
             for _ in range(count):
-                if not spam_flag:
-                    break
-                await message.reply(text)  # Removed asyncio.sleep(1)
+                await message.reply(text)  # No delay for faster spamming
         except (IndexError, ValueError):
             await message.reply("Usage: .spam <count> <text>")
 
     @userbot.on_message(filters.command("raid") & filters.me)
     async def raid(_, message):
         """Start a raid with random quotes."""
-        global raid_flag
         try:
             args = message.text.split(" ", 1)
             count = int(args[1])
-            raid_flag = True
 
             for _ in range(count):
-                if not raid_flag:
-                    break
                 random_quote = random.choice(quotes)
-                await message.reply(random_quote)  # Removed asyncio.sleep(1)
+                await message.reply(random_quote)  # No delay for faster raiding
         except (IndexError, ValueError):
             await message.reply("Usage: .raid <count>")
 
@@ -125,5 +121,15 @@ async def start_userbot(user_id):
 
     # Start the userbot
     await userbot.start()
-    print(f"Userbot started for user {user_id}")
+    logger.info("Userbot started successfully. Press Ctrl+C to stop.")
     await userbot.idle()
+
+
+if __name__ == "__main__":
+    import asyncio
+    try:
+        asyncio.run(start_userbot())
+    except KeyboardInterrupt:
+        logger.info("Userbot stopped manually.")
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
