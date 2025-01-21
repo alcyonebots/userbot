@@ -69,7 +69,7 @@ async def handle_dot_command(_, message):
                     for _ in range(count):
                         random_quote = random.choice(RAID)
                         target_mention = target_message.from_user.mention
-                        await target_message.reply(f"{target_mention} {random_quote}")
+                        await message.reply(f"{target_mention} {random_quote}")
                         await asyncio.sleep(0.1)
                 elif target_username:
                     for _ in range(count):
@@ -124,13 +124,25 @@ async def monitor(_, message):
     ):
         await message.reply(message.text)
 
-    # Reply Raid Mode
+    # Reply Raid Mode (rraid)
     if rraid_flag and (
         (message.reply_to_message and message.reply_to_message == target_message)
         or (message.from_user and message.from_user.username == target_username)
     ):
         random_quote = random.choice(REPLYRAID)
         await message.reply(random_quote)
+
+    # Raid Mode (raid)
+    if raid_flag and (
+        (message.reply_to_message and message.reply_to_message == target_message)
+        or (message.from_user and message.from_user.username == target_username)
+    ):
+        random_quote = random.choice(RAID)
+        if target_message:
+            target_mention = target_message.from_user.mention
+            await message.reply(f"{target_mention} {random_quote}")
+        elif target_username:
+            await message.reply(f"@{target_username} {random_quote}")
 
 
 # Start the userbot
