@@ -2,7 +2,6 @@ import logging
 from pyrogram import Client, filters
 import random
 import asyncio
-from chudai import RAID, REPLYRAID  # Import messages from chudai.py
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +13,17 @@ rraid_flag = False
 raid_flag = False
 target_username = None
 target_message = None
+
+# Load quotes from files
+try:
+    with open("raid.txt", "r") as raid_file:
+        RAID = raid_file.read().splitlines()
+    with open("rraid.txt", "r") as rraid_file:
+        REPLYRAID = rraid_file.read().splitlines()
+except FileNotFoundError as e:
+    logger.error(f"Error loading quotes: {e}")
+    RAID = []
+    REPLYRAID = []
 
 # Pyrogram session string
 string_session = input("Enter your Pyrogram string session: ")
@@ -67,14 +77,17 @@ async def handle_dot_command(_, message):
                 if message.reply_to_message:
                     target_message = message.reply_to_message
                     for _ in range(count):
-                        random_quote = random.choice(RAID)
+                        random_quote = random.choice(RAID) if RAID else "No RAID quotes available."
                         target_mention = target_message.from_user.mention
                         await message.reply(f"{target_mention} {random_quote}")
                         await asyncio.sleep(0.1)
                 elif target_username:
+                    # Get user details to fetch mention
+                    user = await app.get_users(target_username)
+                    user_mention = user.mention if user else f"@{target_username}"  # Fallback if mention not found
                     for _ in range(count):
-                        random_quote = random.choice(RAID)
-                        await message.reply(f"@{target_username} {random_quote}")
+                        random_quote = random.choice(RAID) if RAID else "No RAID quotes available."
+                        await message.reply(f"{user_mention} {random_quote}")
                         await asyncio.sleep(0.1)
                 else:
                     await message.reply("Usage: `.raid <count> <@username or reply to a message>`")
@@ -129,7 +142,7 @@ async def monitor(_, message):
         (message.reply_to_message and message.reply_to_message == target_message)
         or (message.from_user and message.from_user.username == target_username)
     ):
-        random_quote = random.choice(REPLYRAID)
+        random_quote = random.choice(REPLYRAID) if REPLYRAID else "No REPLYRAID quotes available."
         await message.reply(random_quote)
 
     # Raid Mode (raid)
@@ -137,7 +150,7 @@ async def monitor(_, message):
         (message.reply_to_message and message.reply_to_message == target_message)
         or (message.from_user and message.from_user.username == target_username)
     ):
-        random_quote = random.choice(RAID)
+        random_quote = random.choice(RAID) if RAID else "No RAID quotes available."
         if target_message:
             target_mention = target_message.from_user.mention
             await message.reply(f"{target_mention} {random_quote}")
