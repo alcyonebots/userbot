@@ -94,7 +94,7 @@ async def handle_dot_command(_, message):
                 for _ in range(count):
                     random_quote = random.choice(RAID) if RAID else "No RAID quotes available."
                     await message.reply(f"{user_mention} {random_quote}")
-                    await asyncio.sleep(0.1)  # Prevent rate limits
+                    await asyncio.sleep(0.4)  # Prevent rate limits
             else:
                 await message.reply("Usage: `.raid <count> <@username or reply to a message>`")
 
@@ -111,7 +111,7 @@ async def handle_dot_command(_, message):
                 text = " ".join(args[1:])
                 for _ in range(count):
                     await message.reply(text)
-                    await asyncio.sleep(0.1)  # Avoid rate limits
+                    await asyncio.sleep(0.4)  # Avoid rate limits
             else:
                 await message.reply("Usage: `.spam <count> <text>`")
 
